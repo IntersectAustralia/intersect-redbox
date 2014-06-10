@@ -1,0 +1,256 @@
+#macro(Grants $map $key $order)
+	#set($queryKey = "${key}")
+	#set ($value = $map.get($queryKey))
+	#if ("$!value" != "")
+	"foaf:fundedBy.vivo:Grant.${order}.${key}": "$value",
+	#end
+#end
+
+#macro(FundingSources $map $key $order)
+	#set($queryKey = "${key}")
+	#set ($value = $map.get($queryKey))
+	#if ("$!value" != "")
+	"foaf:fundedBy.foaf:Agent.${order}.${key}": "$value",
+	#end
+#end
+
+#macro(copyCodes $map $key $order $type)
+	#set ($value = $map.get($key))
+	#if ("$!value" != "")
+	"dc:subject.anzsrc:${type}.${order}.${key}": "$value",
+	#end
+#end
+
+#macro(mapTo $from $to)
+	#set($v = $util.get($item, $from))
+	#if ($v) "$to": "$!v",
+	#end
+#end
+{
+"viewId": "dashboard",
+"packageType": "self-submission",
+### General
+"dc:title": "$util.get($item, 'dc:title')",
+"dc:description": "$util.get($item, 'dc:description')",
+"dc:type.rdf:PlainLiteral": "$util.get($item, 'dc:type.rdf:PlainLiteral')",
+"dc:extent": "$util.get($item, 'dc:extent')",
+"dc:language.dc:identifier": "$util.get($item, 'dc:language.dc:identifier')",
+#mapTo('oid', 'redbox:ManagementPlan.oid')
+#mapTo('dc:title', 'redbox:ManagementPlan.skos:note')
+
+### Retention & Location
+#foreach( $key in ["redbox:retentionPeriod.dc:date", "vivo:Location.vivo:GeographicLocation.gn:name"
+])
+	#set($v = $util.get($item, $key))
+	#if ($v) "$key": "$!v",
+	#end
+#end
+
+### Subject
+#foreach( $key in [
+"dc:subject.anzsrc:toa.rdf:resource",
+"dc:subject.anzsrc:toa.skos:prefLabel"
+])
+	#set($v = $util.get($item, $key))
+	#if ($v) "$key": "$!v",
+	#else
+	"$key": "",
+	#end
+#end
+
+#set($cList = $util.getList($item, "dc:subject.anzsrc:for"))
+#set($order = 1)
+#if ($cList.size() > 0)
+	#foreach($key in $cList.keySet())
+		#set($slot = $cList.get($key))
+		#copyCodes($slot "skos:prefLabel" $order 'for')
+		#copyCodes($slot "rdf:resource" $order 'for')
+		#copyCodes($slot ".top.dropdown" $order 'for')
+		#copyCodes($slot ".middle.dropdown" $order 'for')
+		#copyCodes($slot ".bottom.dropdown" $order 'for')
+		#set($order = $order + 1)
+	#end
+#end
+
+#set($cList = $util.getList($item, "dc:subject.anzsrc:seo"))
+#set($order = 1)
+#if ($cList.size() > 0)
+	#foreach($key in $cList.keySet())
+		#set($slot = $cList.get($key))
+		#copyCodes($slot "skos:prefLabel" $order 'seo')
+		#copyCodes($slot "rdf:resource" $order 'seo')
+		#copyCodes($slot ".top.dropdown" $order 'seo')
+		#copyCodes($slot ".middle.dropdown" $order 'seo')
+		#copyCodes($slot ".bottom.dropdown" $order 'seo')
+		#set($order = $order + 1)
+	#end
+#end
+
+#macro(KeyWorks $map $key $order)
+	#set($queryKey = "${key}")
+	#set ($value = $map.get($queryKey))
+	#if ("$!value" != "")
+	"dc:subject.vivo:keyword.${order}.${key}": "$value",
+	#end
+#end
+
+#set($cList = $util.getList($item, "dc:subject.vivo:keyword"))
+#set($order = 1)
+#if ($cList.size() > 0)
+	#foreach($key in $cList.keySet())
+		#set($slot = $cList.get($key))
+		#KeyWorks($slot "rdf:PlainLiteral" $order)
+		#set($order = $order + 1)
+	#end
+#end
+
+### People
+#mapTo("locrel:rth.foaf:Person.foaf:title" "dc:creator.foaf:Person.foaf:title")
+#mapTo("locrel:rth.foaf:Person.foaf:givenName" "dc:creator.foaf:Person.foaf:givenName")
+#mapTo("locrel:rth.foaf:Person.foaf:familyName" "dc:creator.foaf:Person.foaf:familyName")
+#mapTo("locrel:rth.foaf:Person.foaf:email" "dc:creator.foaf:Person.foaf:email")
+#mapTo("locrel:rth.foaf:Person.dc:identifier" "dc:creator.foaf:Person.dc:identifier")
+
+#foreach( $key in ["locrel:prc.foaf:Person.foaf:title","locrel:prc.foaf:Person.foaf:givenName","locrel:prc.foaf:Person.foaf:familyName"
+,"locrel:prc.foaf:Person.dc:identifier","locrel:prc.foaf:Person.foaf:email"
+])
+
+	#set($v = $util.get($item, $key))
+	#if ($v) "$key": "$!v",
+	#end
+#end
+
+## Principal Investigators
+#mapTo("dc:creator.foaf:Person.foaf:title" "dc:creator.foaf:Person.foaf:title")
+#mapTo("dc:creator.foaf:Person.foaf:givenName" "dc:creator.foaf:Person.foaf:givenName")
+#mapTo("dc:creator.foaf:Person.foaf:familyName" "dc:creator.foaf:Person.foaf:familyName")
+#mapTo("dc:creator.foaf:Person.foaf:email" "dc:creator.foaf:Person.foaf:email")
+#mapTo("dc:creator.foaf:Person.dc:identifier" "dc:creator.foaf:Person.dc:identifier")
+
+## Collaborators
+#set($index = 1)
+#foreach($index in  [1..10000])
+	#if (! $util.get($item, "dc:contributor.locrel:clb.${index}.foaf:Agent.dc:identifier"))
+		#break
+	#end
+
+	#Collaborators("foaf:title" $index)
+	#Collaborators("foaf:givenName" $index)
+	#Collaborators("foaf:familyName" $index)
+	#Collaborators("foaf:email" $index)
+	#Collaborators("dc:identifier" $index)
+#end
+
+#macro(Collaborators $key $index)
+	#set ($value = $util.get($item, "dc:contributor.locrel:clb.${index}.foaf:Agent.${key}"))
+	#if ("$!value" != "")
+	"dc:contributor.locrel:clb.${index}.foaf:Agent.${key}": "$value",
+	#end
+#end
+
+### Rights
+#foreach( $key in ["dc:license.dc:identifier",
+"dc:license.skos:prefLabel",
+"dc:accessRights.skos:prefLabel",
+"dc:accessRights.dc:identifier",
+"dc:accessRights.dc:RightsStatement.skos:prefLabel",
+"dc:accessRights.dc:RightsStatement.dc:identifier",
+"dc:license.rdf:Alt.skos:prefLabel",
+"dc:license.rdf:Alt.dc:identifier"
+])
+	#set($v = $util.get($item, $key))
+	#if ($v) "$key": "$!v",
+	#end
+#end
+#mapTo("dc:RightsStatement" "dc:accessRights.dc:RightsStatement.skos:prefLabel")
+#mapTo("dc:license.dc:identifier.other" "dc:license.rdf:Alt.skos:prefLabel")
+#mapTo("dc:rights.skos:note" "dc:accessRights.skos:prefLabel")
+#mapTo("dc:license.dc:identifier.url" "dc:license.rdf:Alt.dc:identifier")
+
+
+### Funding body(s)
+#set($cList = $util.getList($item, "foaf:fundedBy.foaf:Agent"))
+#set($order = 1)
+#if ($cList.size() > 0)
+	#foreach($key in $cList.keySet())
+		#set($slot = $cList.get($key))
+		#FundingSources($slot "skos:prefLabel" $order)
+		#FundingSources($slot "dc:identifier" $order)
+		#set($order = $order + 1)
+	#end
+#end
+##
+###set($cList = $util.getList($item, "foaf:fundedBy.vivo:Grant"))
+###set($order = 1)
+###if ($cList.size() > 0)
+##	#foreach($key in $cList.keySet())
+##		#set($slot = $cList.get($key))
+##		#Grants($slot "skos:prefLabel" $order)
+##		#Grants($slot "dc:identifier" $order)
+##		#Grants($slot "redbox:grantNumber" $order)
+##		#set($order = $order + 1)
+##	#end
+###end
+
+### Coverage
+#foreach( $key in ["dc:coverage.vivo:DateTimeInterval.vivo:start"
+,"dc:coverage.vivo:DateTimeInterval.vivo:end"
+,"dc:coverage.redbox:timePeriod"
+])
+	#set($v = $util.get($item, $key))
+	#if ($v) "$key": "$!v",
+	#end
+#end
+
+#set($cList = $util.getList($item, "dc:coverage.vivo:GeographicLocation"))
+#set($order = 1)
+#if ($cList.size() > 0)
+	#foreach($key in $cList.keySet())
+		#set($slot = $cList.get($key))
+		#GeographicLocation($slot "dc:type" $order)
+		#GeographicLocation($slot "redbox:wktRaw" $order)
+		#GeographicLocation($slot "rdf:PlainLiteral" $order)
+		#GeographicLocation($slot "geo:long" $order)
+		#GeographicLocation($slot "geo:lat" $order)
+		#GeographicLocation($slot "dc:identifier" $order)
+		#set($order = $order + 1)
+	#end
+#end
+
+#macro(GeographicLocation $map $key $order)
+	#set($queryKey = "${key}")
+	#set ($value = $map.get($queryKey))
+	#if ("$!value" != "")
+	"dc:coverage.vivo:GeographicLocation.${order}.${key}": "$value",
+	#end
+#end
+
+### Publications
+
+#set($cList = $util.getList($item, "dc:relation.swrc:Publication"))
+#set($order = 1)
+#if ($cList.size() > 0)
+	#foreach($key in $cList.keySet())
+		#set($slot = $cList.get($key))
+		#Publication($slot "dc:identifier" $order)
+		#Publication($slot "dc:title" $order)
+		#Publication($slot "skos:note" $order)
+		#set($order = $order + 1)
+	#end
+#end
+
+#macro(Publication $map $key $order)
+	#set($queryKey = "${key}")
+	#set ($value = $map.get($queryKey))
+	#if ("$!value" != "")
+	"dc:relation.swrc:Publication.${order}.${key}": "$value",
+	#end
+#end
+
+### project title
+"swrc:ResearchProject.dc:title": "$util.get($item, 'swrc:ResearchProject.dc:title')",
+
+
+"redbox:newForm": "$util.get($item, 'redbox:newForm')",
+"redbox:formVersion": "$util.get($item, 'redbox:formVersion')"
+}

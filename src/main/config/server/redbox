@@ -1,0 +1,11 @@
+#!/bin/bash
+#
+# redbox       Startup script for the ReDBox service
+#
+# chkconfig: 2345 90 10
+# description: ReDBox service.
+
+USER=redbox
+CMD="/opt/redbox/server/tf.sh"
+
+su $USER -c "$CMD $*"
