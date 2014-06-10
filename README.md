@@ -1,6 +1,6 @@
 ReDBox - Intersect insitutional build
 ======================
-Supported: Dateset Cloning, LDAP integration.
+Supports: Dateset Cloning, LDAP integration.
 
 This code is licensed under the GNU GPL v3 license - see LICENSE.txt
 
